@@ -16,7 +16,7 @@ yag = yagmail.SMTP(user='senderbender18@gmail.com',password='en un lugar de la m
 
 receipt = "pmgiral@pm.me"
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 now = datetime.now()
 two_hour = timedelta(hours = 2)
@@ -33,7 +33,13 @@ def list_interesting(feed,cadena):
     for i in range(0,len(feed.entries)):
         dt = datetime.fromtimestamp(mktime(meneame.entries[i]['updated_parsed']))
         if ( (cadena in feed.entries[i]['title'].lower()) or (cadena in feed.entries[i]['summary'].lower()) ) and (dt > two_hours_ago) :
-            result=result+"Title: %s\n\n author: %s\n\n Link: %s\n\n" % (  feed.entries[i]['title'] ,  feed.entries[i]['author'] , feed.entries[i]['link'])
+            #result = result+"Title: %s\n\n author: %s\n\n Link: %s\n\n" % (  feed.entries[i]['title'] ,  feed.entries[i]['author'] , feed.entries[i]['link'])
+
+            title =  feed.entries[i]['title']
+            author = feed.entries[i]['author']
+            url = feed.entries[i]['link']
+
+            result = 'Titulo : '+title+  '\n\nAutor : '+ author + '\n\nEnlace : <a href='+url+'>'+url+'</a>'
     return result
 
 
@@ -43,10 +49,10 @@ def list_interesting(feed,cadena):
 #print('result='+list_interesting(meneame,'vuln'))
 
 #if list_interesting(meneame,'vuln')!="":
-if list_interesting(meneame, 'sargento') != "":
+if list_interesting(meneame, 'tronos') != "":
     logging.debug("noticia encontrada")
-    subj = "Meneame : Vulns "+datetime.now().strftime("%Y-%m-%d %H:%M")
-    cont = list_interesting(meneame,'sargento')
+    subj = "Meneame : tronos "+datetime.now().strftime("%Y-%m-%d %H:%M")
+    cont = list_interesting(meneame,'tronos')
 
     yag.send(
         to = receipt,
