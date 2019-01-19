@@ -38,21 +38,24 @@ def list_interesting(feed,cadena):
             title =  feed.entries[i]['title']
             author = feed.entries[i]['author']
             url = feed.entries[i]['link']
+            summary = feed.entries[i]['summary']
 
-            result = 'Titulo : '+title+  '\n\nAutor : '+ author + '\n\nEnlace : <a href='+url+'>'+url+'</a>'
+            result = '<b>Titulo :</b> '+title+  '\n\n<b>Autor : </b>' + author + '\n\n<b>Enlace : </b><a href='+url+'>' + url + '</a>\n\n'+summary
     return result
 
 
 
 
 
-#print('result='+list_interesting(meneame,'vuln'))
+
 
 #if list_interesting(meneame,'vuln')!="":
-if list_interesting(meneame, 'tronos') != "":
+
+
+if list_interesting(meneame, 'madrid') != "":
     logging.debug("noticia encontrada")
-    subj = "Meneame : tronos "+datetime.now().strftime("%Y-%m-%d %H:%M")
-    cont = list_interesting(meneame,'tronos')
+    subj = "Meneame : madrid "+datetime.now().strftime("%Y-%m-%d %H:%M")
+    cont = list_interesting(meneame,'madrid')
 
     yag.send(
         to = receipt,
