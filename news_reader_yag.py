@@ -12,7 +12,7 @@ port = 465
 #password = input("type your password: ")
 password = "en un lugar de la mancha 1234"
 
-yag = yagmail.SMTP(user='senderbender18@gmail.com',password='en un lugar de la mancha 1234', smtp_set_debuglevel=4)
+yag = yagmail.SMTP(user='senderbender18@gmail.com',password=******, smtp_set_debuglevel=4)
 
 receipt = "pmgiral@pm.me"
 
