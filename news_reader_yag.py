@@ -8,13 +8,13 @@ import yagmail
 
 
 
-port = 465
+port = https://github.com/num311/news_reader/blob/master/news_reader_yag.py465
 #password = input("type your password: ")
-password = "en un lugar de la mancha 1234"
+password = "xxxxxxxxxxxxx"
 
-yag = yagmail.SMTP(user='senderbender18@gmail.com',password=******, smtp_set_debuglevel=4)
+yag = yagmail.SMTP(user='xxxxxxxxxxxxx',password=******, smtp_set_debuglevel=4)
 
-receipt = "pmgiral@pm.me"
+receipt = "xxxxxxxxxxxxx"
 
 logging.basicConfig(level=logging.INFO)
 
