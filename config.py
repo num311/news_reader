@@ -9,7 +9,11 @@ FEEDS = {
     "pwned": "https://www.reddit.com/r/pwned/.rss",
     "databreaches": "https://www.databreaches.net/feed/",
     "haveibeenpwned": "https://feeds.feedburner.com/HaveIBeenPwnedLatestBreaches",
-    "ransomware": "https://www.ransomware.live/rss.xml"
+    "ransomware": "https://www.ransomware.live/rss.xml",
+    "ransomfeed": "https://ransomfeed.it/rss",
+    "cisa": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+    "nvd": "https://nvd.nist.gov/feeds/xml/cve/misc/nvd-rss.xml",
+    "bleepingcomputer": "https://www.bleepingcomputer.com/feed/"
 }
 
 KEYWORDS = ["cyber", "acronis", "vuln"]
