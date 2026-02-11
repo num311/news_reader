@@ -13,7 +13,11 @@ FEEDS = {
     "ransomfeed": "https://ransomfeed.it/rss",
     "cisa": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
     "nvd": "https://nvd.nist.gov/feeds/xml/cve/misc/nvd-rss.xml",
-    "bleepingcomputer": "https://www.bleepingcomputer.com/feed/"
+    "bleepingcomputer": "https://www.bleepingcomputer.com/feed/",
+    "krebsonsecurity": "https://krebsonsecurity.com/feed/",
+    "thehackernews": "https://feeds.feedburner.com/TheHackernews"
+
+
 }
 
 KEYWORDS = ["cyber", "acronis", "vuln"]
