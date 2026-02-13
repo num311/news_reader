@@ -11,7 +11,7 @@ import feedparser
 import yagmail
 import config
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def search_news(feed_url, keywords, hours):
     """
@@ -24,7 +24,7 @@ def search_news(feed_url, keywords, hours):
         hours (int): The number of hours to look back for new entries.
 
     Returns:
-        list: A list of feedparser entry objects that match the criteria.
+        list: A list of dictionaries, each containing an 'entry' and the 'keyword' that triggered it.
     """
     interesting_entries = []
     now = datetime.now()
@@ -32,34 +32,37 @@ def search_news(feed_url, keywords, hours):
     feed = feedparser.parse(feed_url)
 
     for entry in feed.entries:
-        entry_time = datetime.fromtimestamp(mktime(entry['updated_parsed']))
+        entry_time = datetime.fromtimestamp(mktime(entry["updated_parsed"]))
         if entry_time > time_threshold:
             for keyword in keywords:
-                if (keyword.lower() in entry['title'].lower() or
-                        keyword.lower() in entry['summary'].lower()):
-                    interesting_entries.append(entry)
+                if (keyword.lower() in entry["title"].lower() or
+                        keyword.lower() in entry["summary"].lower()):
+                    interesting_entries.append({"entry": entry, "keyword": keyword})
                     break  # Move to the next entry once a keyword is found
     return interesting_entries
 
 def format_email_body(entries):
     """
-    Formats a list of feed entries into an HTML email body.
+    Formats a list of feed entries (with associated keywords) into an HTML email body.
 
     Args:
-        entries (list): A list of feedparser entry objects.
+        entries (list): A list of dictionaries, each containing an 'entry' and the 'keyword'.
 
     Returns:
         str: An HTML formatted string for the email body.
     """
     body = ""
-    for entry in entries:
-        title = entry.get('title', 'N/A')
-        author = entry.get('author', 'N/A')
-        url = entry.get('link', '#')
-        summary = entry.get('summary', 'No summary available.')
+    for item in entries:
+        entry = item["entry"]
+        keyword = item["keyword"]
+        title = entry.get("title", "N/A")
+        author = entry.get("author", "N/A")
+        url = entry.get("link", "#")
+        summary = entry.get("summary", "No summary available.")
         body += f"<b>Titulo :</b> {title}<br>"
         body += f"<b>Autor : </b> {author}<br>"
-        body += f"<b>Enlace : </b><a href='{url}'>{url}</a><br>"
+        body += f"<b>Enlace : </b><a href=\\'{url}\\'<{url}</a><br>"
+        body += f"<b>Palabra clave:</b> {keyword}<br>"
         body += f"<p>{summary}</p><hr>"
     return body
 
@@ -92,7 +95,16 @@ def main():
         interesting_entries = search_news(feed_url, config.KEYWORDS, config.HOURS_AGO)
 
         if interesting_entries:
-            logging.info("Found %d interesting news in %s.", len(interesting_entries), feed_name)
+            # Log each interesting entry with the keyword that triggered it
+            for item in interesting_entries:
+                entry = item["entry"]
+                keyword = item["keyword"]
+                logging.info(
+                    "Found interesting news in %s (keyword: %s): %s",
+                    feed_name,
+                    keyword,
+                    entry.get("title", "N/A")
+                )
             email_body = format_email_body(interesting_entries)
             subject = f"Noticias de {feed_name.capitalize()} con sus palabras clave"
             send_notification_email(config.EMAIL_RECIPIENT, subject, email_body)
