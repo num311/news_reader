@@ -1,7 +1,9 @@
+import os
+
 # config.py
 
 EMAIL_SENDER = "fallout716@gmail.com"
-EMAIL_PASSWORD = "xxxxx"  # It is recommended to use environment variables for sensitive data
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "") # It is recommended to use environment variables for sensitive data
 EMAIL_RECIPIENT = "pmgiral@pm.me"
 
 FEEDS = {
@@ -21,4 +23,4 @@ FEEDS = {
 }
 
 KEYWORDS = ["acronis", "breach", "ransomware", "leak", "exploit", "vulnerability", "hacked", "dump", "compromised", "incident", "attack"]
-HOURS_AGO = 2
+HOURS_AGO = 8
