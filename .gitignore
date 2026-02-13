@@ -8,7 +8,7 @@ Secretos y Configuracion Local
 .env .env.local .secrets
 
 Testing y Cobertura
-.pytest_cache/ .tox/ .coverage htmlcov/
+.pytest_cache/ .tox/ .coverage htmlcov/ .__pycache__/
 
 Empaquetado y Distribucion
 build/ dist/ *.egg-info/
