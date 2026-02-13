@@ -20,5 +20,5 @@ FEEDS = {
 
 }
 
-KEYWORDS = ["cyber", "acronis", "vuln"]
+KEYWORDS = ["acronis", "breach", "ransomware", "leak", "exploit", "vulnerability", "hacked", "dump", "compromised", "incident", "attack"]
 HOURS_AGO = 2
