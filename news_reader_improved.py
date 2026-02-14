@@ -74,7 +74,7 @@ def search_news(feed_url, keywords, hours):
             for keyword in keywords:
                 if (keyword.lower() in title.lower() or
                         keyword.lower() in summary.lower()):
-                    interesting_entries.append({"entry": entry, "keyword": keyword})
+                    interesting_entries.append({'entry': entry, 'keyword': keyword})
                     break  # Move to the next entry once a keyword is found
     return interesting_entries
 
@@ -96,7 +96,7 @@ def format_email_body(entries):
         title = html.escape(entry.get("title", "N/A"))
         author = html.escape(entry.get("author", "N/A"))
         url = html.escape(entry.get("link", "#"))
-        summary = html.escape(entry.get("summary", "No summary available."))
+        summary = html.escape(entry.get("summary", "No summary available.")) 
         body += f"<b>Titulo :</b> {title}<br>"
         body += f"<b>Autor : </b> {author}<br>"
         body += f"<b>Enlace : </b><a href='{url}'>{url}</a><br>"
@@ -130,26 +130,36 @@ def main():
     """
     Main function to run the news reader.
     """
+    all_interesting_entries = [] # New list to collect all entries
+    all_found_news_titles = [] # To log all found news without repetition
+
     for feed_name, feed_url in config.FEEDS.items():
         logging.info("Searching for news in %s...", feed_name)
-        interesting_entries = search_news(feed_url, config.KEYWORDS, config.HOURS_AGO)
+        interesting_entries_for_feed = search_news(feed_url, config.KEYWORDS, config.HOURS_AGO)
 
-        if interesting_entries:
-            # Log each interesting entry with the keyword that triggered it
-            for item in interesting_entries:
+        if interesting_entries_for_feed:
+            for item in interesting_entries_for_feed:
                 entry = item["entry"]
                 keyword = item["keyword"]
-                logging.info(
-                    "Found interesting news in %s (keyword: %s): %s",
-                    feed_name,
-                    keyword,
-                    entry.get("title", "N/A")
-                )
-            email_body = format_email_body(interesting_entries)
-            subject = f"Noticias de {feed_name.capitalize()} con sus palabras clave"
-            send_notification_email(config.EMAIL_RECIPIENT, subject, email_body)
+                title = entry.get("title", "N/A")
+                if title not in all_found_news_titles: # Avoid duplicate logging/entries
+                    logging.info(
+                        "Found interesting news in %s (keyword: %s): %s",
+                        feed_name,
+                        keyword,
+                        title
+                    )
+                    all_interesting_entries.append(item)
+                    all_found_news_titles.append(title)
         else:
             logging.info("No interesting news found in %s.", feed_name)
+
+    if all_interesting_entries:
+        email_body = format_email_body(all_interesting_entries)
+        subject = "Resumen diario de noticias con sus palabras clave" # Generic subject for all news
+        send_notification_email(config.EMAIL_RECIPIENT, subject, email_body)
+    else:
+        logging.info("No interesting news found across all feeds to send an email.")
 
 
 if __name__ == "__main__":
