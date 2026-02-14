@@ -4,8 +4,9 @@ This script checks RSS feeds for news containing specific keywords within a
 certain time frame and sends an email notification.
 """
 
-from datetime import datetime, timedelta
-from time import mktime
+from datetime import datetime, timedelta, timezone
+from calendar import timegm
+from email.utils import parsedate_to_datetime
 import logging
 import html
 import config
@@ -27,12 +28,24 @@ except ImportError:
 
 def _extract_entry_time(entry):
     """
-    Returns a datetime from common feedparser timestamp fields.
+    Returns a UTC datetime from common feedparser timestamp fields.
     """
     parsed_time = entry.get("updated_parsed") or entry.get("published_parsed")
-    if not parsed_time:
+    if parsed_time:
+        return datetime.fromtimestamp(timegm(parsed_time), tz=timezone.utc)
+
+    string_time = entry.get("updated") or entry.get("published")
+    if not string_time:
         return None
-    return datetime.fromtimestamp(mktime(parsed_time))
+
+    try:
+        dt = parsedate_to_datetime(string_time)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
 
 def search_news(feed_url, keywords, hours):
     """
@@ -48,15 +61,14 @@ def search_news(feed_url, keywords, hours):
         list: A list of dictionaries, each containing an 'entry' and the 'keyword' that triggered it.
     """
     interesting_entries = []
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     time_threshold = now - timedelta(hours=hours)
     feed = feedparser.parse(feed_url)
 
     for entry in feed.entries:
         entry_time = _extract_entry_time(entry)
-        if entry_time is None:
-            continue
-        if entry_time > time_threshold:
+        is_recent = entry_time is None or entry_time > time_threshold
+        if is_recent:
             title = entry.get("title", "")
             summary = entry.get("summary", "")
             for keyword in keywords:
@@ -65,6 +77,7 @@ def search_news(feed_url, keywords, hours):
                     interesting_entries.append({"entry": entry, "keyword": keyword})
                     break  # Move to the next entry once a keyword is found
     return interesting_entries
+
 
 def format_email_body(entries):
     """
@@ -91,6 +104,7 @@ def format_email_body(entries):
         body += f"<p>{summary}</p><hr>"
     return body
 
+
 def send_notification_email(recipient, subject, body):
     """
     Sends an email using yagmail.
@@ -110,6 +124,7 @@ def send_notification_email(recipient, subject, body):
         logging.info("Email sent successfully to %s", recipient)
     except Exception as e:
         logging.error("Failed to send email: %s", e)
+
 
 def main():
     """
@@ -135,6 +150,7 @@ def main():
             send_notification_email(config.EMAIL_RECIPIENT, subject, email_body)
         else:
             logging.info("No interesting news found in %s.", feed_name)
+
 
 if __name__ == "__main__":
     main()
