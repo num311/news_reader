@@ -89,20 +89,26 @@ def format_email_body(entries):
     Returns:
         str: An HTML formatted string for the email body.
     """
-    body = ""
+    body_parts = []
     for item in entries:
         entry = item["entry"]
         keyword = item["keyword"]
         title = html.escape(entry.get("title", "N/A"))
         author = html.escape(entry.get("author", "N/A"))
         url = html.escape(entry.get("link", "#"))
-        summary = html.escape(entry.get("summary", "No summary available.")) 
-        body += f"<b>Titulo :</b> {title}<br>"
-        body += f"<b>Autor : </b> {author}<br>"
-        body += f"<b>Enlace : </b><a href='{url}'>{url}</a><br>"
-        body += f"<b>Palabra clave:</b> {html.escape(keyword)}<br>"
-        body += f"<p>{summary}</p><hr>"
-    return body
+        # Sanitize summary - escape any HTML in the summary to ensure it's displayed as plain text
+        summary = html.escape(entry.get("summary", "No summary available."))
+
+        news_item_html = f"""
+        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px;">
+            <h3><b>Titulo :</b> <a href="{url}" style="text-decoration: none; color: #0056b3;">{title}</a></h3>
+            <p><b>Autor : </b> {author}</p>
+            <p><b>Palabra clave:</b> {html.escape(keyword)}</p>
+            <p>{summary}</p>
+        </div>
+        """
+        body_parts.append(news_item_html)
+    return "".join(body_parts)
 
 
 def send_notification_email(recipient, subject, body):
