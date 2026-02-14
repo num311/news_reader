@@ -7,11 +7,32 @@ certain time frame and sends an email notification.
 from datetime import datetime, timedelta
 from time import mktime
 import logging
-import feedparser
-import yagmail
+import html
 import config
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+try:
+    import feedparser
+except ImportError:
+    logging.error("Missing dependency 'feedparser'. Install with: pip install -r requirements.txt")
+    raise SystemExit(1)
+
+try:
+    import yagmail
+except ImportError:
+    logging.error("Missing dependency 'yagmail'. Install with: pip install -r requirements.txt")
+    raise SystemExit(1)
+
+
+def _extract_entry_time(entry):
+    """
+    Returns a datetime from common feedparser timestamp fields.
+    """
+    parsed_time = entry.get("updated_parsed") or entry.get("published_parsed")
+    if not parsed_time:
+        return None
+    return datetime.fromtimestamp(mktime(parsed_time))
 
 def search_news(feed_url, keywords, hours):
     """
@@ -32,11 +53,15 @@ def search_news(feed_url, keywords, hours):
     feed = feedparser.parse(feed_url)
 
     for entry in feed.entries:
-        entry_time = datetime.fromtimestamp(mktime(entry["updated_parsed"]))
+        entry_time = _extract_entry_time(entry)
+        if entry_time is None:
+            continue
         if entry_time > time_threshold:
+            title = entry.get("title", "")
+            summary = entry.get("summary", "")
             for keyword in keywords:
-                if (keyword.lower() in entry["title"].lower() or
-                        keyword.lower() in entry["summary"].lower()):
+                if (keyword.lower() in title.lower() or
+                        keyword.lower() in summary.lower()):
                     interesting_entries.append({"entry": entry, "keyword": keyword})
                     break  # Move to the next entry once a keyword is found
     return interesting_entries
@@ -55,14 +80,14 @@ def format_email_body(entries):
     for item in entries:
         entry = item["entry"]
         keyword = item["keyword"]
-        title = entry.get("title", "N/A")
-        author = entry.get("author", "N/A")
-        url = entry.get("link", "#")
-        summary = entry.get("summary", "No summary available.")
+        title = html.escape(entry.get("title", "N/A"))
+        author = html.escape(entry.get("author", "N/A"))
+        url = html.escape(entry.get("link", "#"))
+        summary = html.escape(entry.get("summary", "No summary available."))
         body += f"<b>Titulo :</b> {title}<br>"
         body += f"<b>Autor : </b> {author}<br>"
-        body += f"<b>Enlace : </b><a href=\\'{url}\\'<{url}</a><br>"
-        body += f"<b>Palabra clave:</b> {keyword}<br>"
+        body += f"<b>Enlace : </b><a href='{url}'>{url}</a><br>"
+        body += f"<b>Palabra clave:</b> {html.escape(keyword)}<br>"
         body += f"<p>{summary}</p><hr>"
     return body
 
