@@ -1,30 +1,12 @@
 import os
 
-# Notificaciones: "email" o "telegram"
-NOTIFICATION_METHOD = os.getenv("NOTIFICATION_METHOD", "email").lower()
+# Notificaciones: "email"
+NOTIFICATION_METHOD = "email"
 
 # Configuracion de correo
 EMAIL_SENDER = "fallout716@gmail.com"
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
 EMAIL_RECIPIENT = "pmgiral@pm.me"
-
-# Configuracion de Telegram para envio de notificaciones
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
-
-# Configuracion de Telegram para busqueda en canales (Telethon)
-TELEGRAM_ENABLE_SEARCH = os.getenv("TELEGRAM_ENABLE_SEARCH", "false").lower() == "true"
-TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "0"))
-TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "")
-TELEGRAM_SESSION_NAME = os.getenv("TELEGRAM_SESSION_NAME", "news_reader_session")
-
-# Canales a revisar (variable de entorno, separados por coma, sin @)
-# Ejemplo: TELEGRAM_CHANNELS="durov,examplechannel"
-TELEGRAM_CHANNELS = [
-    channel.strip()
-    for channel in os.getenv("TELEGRAM_CHANNELS", "").split(",")
-    if channel.strip()
-]
 
 FEEDS = {
     "meneame": "https://www.meneame.net/rss",
