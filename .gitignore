@@ -1,18 +1,27 @@
-Archivos de Python
-pycache/ *.py[cod] *$py.class
-
-Entornos Virtuales
-venv/ .venv/ env/ .env_venv/
-
-Secretos y Configuracion Local
-.env .env.local .secrets
-
-Testing y Cobertura
-.pytest_cache/ .tox/ .coverage htmlcov/ .__pycache__/
-
-Empaquetado y Distribucion
-build/ dist/ *.egg-info/
-
-Entornos de Desarrollo (IDEs) y SO
+# Archivos de Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+venv/
+**/venv/
+.venv/
+env/
+.env_venv/
+
+# Secretos y configuracion local
+.env
+.env.local
+.secrets
+
+# Testing y cobertura
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Empaquetado y distribucion
+build/
+dist/
+*.egg-info/
