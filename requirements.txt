@@ -1,2 +1,4 @@
 feedparser>=6.0.10
 yagmail>=0.15.293
+requests>=2.32.0
+telethon>=1.36.0
