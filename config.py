@@ -34,4 +34,4 @@ KEYWORDS = [
     "incident",
     "attack",
 ]
-HOURS_AGO = 8
+HOURS_AGO = 4
