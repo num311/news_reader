@@ -10,6 +10,7 @@ from email.utils import parsedate_to_datetime
 import logging
 import html
 import config
+from email_sender.sender import send_email
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -17,12 +18,6 @@ try:
     import feedparser
 except ImportError:
     logging.error("Missing dependency 'feedparser'. Install with: pip install -r requirements.txt")
-    raise SystemExit(1)
-
-try:
-    import yagmail
-except ImportError:
-    logging.error("Missing dependency 'yagmail'. Install with: pip install -r requirements.txt")
     raise SystemExit(1)
 
 
@@ -74,7 +69,7 @@ def search_news(feed_url, keywords, hours):
             for keyword in keywords:
                 if (keyword.lower() in title.lower() or
                         keyword.lower() in summary.lower()):
-                    interesting_entries.append({'entry': entry, 'keyword': keyword})
+                    interesting_entries.append({"entry": entry, "keyword": keyword})
                     break  # Move to the next entry once a keyword is found
     return interesting_entries
 
@@ -111,27 +106,6 @@ def format_email_body(entries):
     return "".join(body_parts)
 
 
-def send_notification_email(recipient, subject, body):
-    """
-    Sends an email using yagmail.
-
-    Args:
-        recipient (str): The email address of the recipient.
-        subject (str): The subject of the email.
-        body (str): The HTML body of the email.
-    """
-    try:
-        yag = yagmail.SMTP(user=config.EMAIL_SENDER, password=config.EMAIL_PASSWORD)
-        yag.send(
-            to=recipient,
-            subject=subject,
-            contents=body
-        )
-        logging.info("Email sent successfully to %s", recipient)
-    except Exception as e:
-        logging.error("Failed to send email: %s", e)
-
-
 def main():
     """
     Main function to run the news reader.
@@ -163,7 +137,7 @@ def main():
     if all_interesting_entries:
         email_body = format_email_body(all_interesting_entries)
         subject = "Resumen diario de noticias con sus palabras clave" # Generic subject for all news
-        send_notification_email(config.EMAIL_RECIPIENT, subject, email_body)
+        send_email(config.EMAIL_RECIPIENT, subject, email_body)
     else:
         logging.info("No interesting news found across all feeds to send an email.")
 
