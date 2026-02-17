@@ -19,21 +19,9 @@ import html
 import config
 import feedparser
 from telegram_sender.bot import send_message
+from email_sender.sender import send_email
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-
-
-
-
-
-# Dynamically load the email sender module
-#try:
-#    email_sender_module = importlib.import_module(config.EMAIL_SENDER_MODULE)
-#    send_email = email_sender_module.send_email
-#except (ImportError, AttributeError) as e:
-#    logging.error("Error loading email sender module ", config.EMAIL_SENDER_MODULE, ": ", e)
-#    sys.exit(1)
-from email_sender.sender import send_email
 
 
 def _extract_entry_time(entry):
