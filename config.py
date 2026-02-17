@@ -4,9 +4,8 @@ import os
 NOTIFICATION_METHOD = "email"
 
 # Configuracion de correo
-EMAIL_SENDER = "fallout716@gmail.com"
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
 EMAIL_RECIPIENT = "pmgiral@pm.me"
+EMAIL_SENDER_MODULE = "email_sender.sender" # New setting for dynamic module loading
 
 FEEDS = {
     "meneame": "https://www.meneame.net/rss",

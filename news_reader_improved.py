@@ -6,6 +6,7 @@ certain time frame and sends an email notification.
 
 import sys
 import os
+import importlib
 
 # Add the parent directory to sys.path to locate the 'email_sender' module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,7 +17,6 @@ from email.utils import parsedate_to_datetime
 import logging
 import html
 import config
-from email_sender.sender import send_email
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -25,6 +25,14 @@ try:
 except ImportError:
     logging.error("Missing dependency 'feedparser'. Install with: pip install -r requirements.txt")
     raise SystemExit(1)
+
+# Dynamically load the email sender module
+try:
+    email_sender_module = importlib.import_module(config.EMAIL_SENDER_MODULE)
+    send_email = email_sender_module.send_email
+except (ImportError, AttributeError) as e:
+    logging.error("Error loading email sender module ", config.EMAIL_SENDER_MODULE, ": ", e)
+    sys.exit(1)
 
 
 def _extract_entry_time(entry):
@@ -85,7 +93,7 @@ def format_email_body(entries):
     Formats a list of feed entries (with associated keywords) into an HTML email body.
 
     Args:
-        entries (list): A list of dictionaries, each containing an 'entry' and the 'keyword'.
+        entries (list): A list of dictionaries, each containing an "entry" and the "keyword".
 
     Returns:
         str: An HTML formatted string for the email body.
