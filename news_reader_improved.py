@@ -4,6 +4,12 @@ This script checks RSS feeds for news containing specific keywords within a
 certain time frame and sends an email notification.
 """
 
+import sys
+import os
+
+# Add the parent directory to sys.path to locate the 'email_sender' module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from datetime import datetime, timedelta, timezone
 from calendar import timegm
 from email.utils import parsedate_to_datetime
