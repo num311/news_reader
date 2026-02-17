@@ -1,4 +1,4 @@
-lsimport os
+import os
 import yagmail
 
 def send_email(receiver_email, subject, contents, attachments=None):

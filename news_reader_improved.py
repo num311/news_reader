@@ -4,13 +4,6 @@ This script checks RSS feeds for news containing specific keywords within a
 certain time frame and sends an email notification.
 """
 
-import sys
-import os
-import importlib
-
-# Add the parent directory to sys.path to locate the 'email_sender' module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from datetime import datetime, timedelta, timezone
 from calendar import timegm
 from email.utils import parsedate_to_datetime
@@ -18,8 +11,8 @@ import logging
 import html
 import config
 import feedparser
-from telegram_sender.bot import send_message
-from email_sender.sender import send_email
+from packages.telegram_sender import send_message
+from packages.email_sender import send_email
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
