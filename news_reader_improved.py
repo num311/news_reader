@@ -17,6 +17,7 @@ from email.utils import parsedate_to_datetime
 import logging
 import html
 import config
+from telegram_sender.bot import send_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -113,7 +114,8 @@ def format_email_body(entries):
             <h3><b>Titulo :</b> <a href="{url}" style="text-decoration: none; color: #0056b3;">{title}</a></h3>
             <p><b>Autor : </b> {author}</p>
             <p><b>Palabra clave:</b> {html.escape(keyword)}</p>
-            <p>{summary}</p>
+            <p><b>Resumen:</b><br>{summary}</p>
+           
         </div>
         """
         body_parts.append(news_item_html)
@@ -149,9 +151,21 @@ def main():
             logging.info("No interesting news found in %s.", feed_name)
 
     if all_interesting_entries:
-        email_body = format_email_body(all_interesting_entries)
-        subject = "Resumen diario de noticias con sus palabras clave" # Generic subject for all news
-        send_email(config.EMAIL_RECIPIENT, subject, email_body)
+        if config.NOTIFICATION_CHANNEL in ["email", "both"]:
+            email_body = format_email_body(all_interesting_entries)
+            subject = "Resumen diario de noticias con sus palabras clave" # Generic subject for all news
+            send_email(config.EMAIL_RECIPIENT, subject, email_body)
+
+        if config.NOTIFICATION_CHANNEL in ["telegram", "both"]:
+            for item in all_interesting_entries:
+                entry = item["entry"]
+                keyword = item["keyword"]
+                title = entry.get("title", "N/A")
+                url = entry.get("link", "#")
+                telegram_message = f"Title: {title}\nKeyword: {keyword}\nLink: {url}"
+                send_message(telegram_message)
+                logging.info(f"Sent Telegram message: {telegram_message}")
+
     else:
         logging.info("No interesting news found across all feeds to send an email.")
 

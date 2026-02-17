@@ -1,7 +1,7 @@
 import os
 
-# Notificaciones: "email"
-NOTIFICATION_METHOD = "email"
+# Configuracion de notificaciones
+NOTIFICATION_CHANNEL = "telegram" # Options: "email", "telegram", "both"
 
 # Configuracion de correo
 EMAIL_RECIPIENT = "pmgiral@pm.me"
