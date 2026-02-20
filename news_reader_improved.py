@@ -21,21 +21,20 @@ def _extract_entry_time(entry):
     """
     Returns a UTC datetime from common feedparser timestamp fields.
     """
-    parsed_time = entry.get("updated_parsed") or entry.get("published_parsed")
-    if parsed_time:
-        return datetime.fromtimestamp(timegm(parsed_time), tz=timezone.utc)
+    for field in ("updated_parsed", "published_parsed"):
+        if entry.get(field):
+            return datetime.fromtimestamp(timegm(entry[field]), tz=timezone.utc)
 
-    string_time = entry.get("updated") or entry.get("published")
-    if not string_time:
-        return None
+    for field in ("updated", "published"):
+        if not entry.get(field):
+            continue
+        try:
+            dt = parsedate_to_datetime(entry[field])
+            return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
+        except Exception:
+            return None
 
-    try:
-        dt = parsedate_to_datetime(string_time)
-        if dt.tzinfo is None:
-            return dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
-    except Exception:
-        return None
+    return None
 
 
 def search_news(feed_url, keywords, hours):
