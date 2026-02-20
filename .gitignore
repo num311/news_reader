@@ -26,3 +26,7 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+
+# logfiles
+cron.log
+*.log
