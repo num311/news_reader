@@ -17,3 +17,19 @@ The `config.py` file contains the following configurable options:
 2.  Parses the content of each article.
 3.  Searches for any of the defined keywords within the article content.
 4.  If a keyword is found, an email notification is sent to the configured recipient using the `email_sender` module.
+
+## Run with Docker
+
+Build the image from the `dockerfile`:
+
+```bash
+docker build -f dockerfile -t news-reader .
+```
+
+Run the container:
+
+```bash
+docker run --rm --env-file .env news-reader
+```
+
+If you do not use a `.env` file, pass required variables with `-e` (for example `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`).
