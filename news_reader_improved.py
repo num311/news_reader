@@ -1,153 +1,202 @@
 #!/usr/bin/python3
 """
 This script checks RSS feeds for news containing specific keywords within a
-certain time frame and sends an email notification.
+certain time frame and sends notifications via email or Telegram.
 """
 
+import logging
+import html
 from datetime import datetime, timedelta, timezone
 from calendar import timegm
 from email.utils import parsedate_to_datetime
-import logging
-import html
-import config
+from typing import List, Dict, Optional, Any
+
 import feedparser
+import config
 from packages.telegram_sender import send_message
 from packages.email_sender import send_email
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
-def _extract_entry_time(entry):
+def _extract_entry_time(entry: Dict[str, Any]) -> Optional[datetime]:
     """
-    Returns a UTC datetime from common feedparser timestamp fields.
+    Returns a UTC datetime object from common feedparser timestamp fields.
+    Prioritizes parsed fields over raw string fields.
     """
+    # Try using pre-parsed fields first (more reliable)
     for field in ("updated_parsed", "published_parsed"):
         if entry.get(field):
             return datetime.fromtimestamp(timegm(entry[field]), tz=timezone.utc)
 
+    # Fallback to parsing raw string fields
     for field in ("updated", "published"):
         if not entry.get(field):
             continue
         try:
             dt = parsedate_to_datetime(entry[field])
+            # Ensure timezone is UTC
             return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
         except Exception:
-            return None
+            continue  # Try next field if parsing fails
 
     return None
 
 
-def search_news(feed_url, keywords, hours):
+def is_entry_recent(entry: Dict[str, Any], hours: int) -> bool:
     """
-    Searches an RSS feed for entries containing specified keywords within a
-    given time frame.
-
-    Args:
-        feed_url (str): The URL of the RSS feed.
-        keywords (list): A list of keywords to search for.
-        hours (int): The number of hours to look back for new entries.
-
-    Returns:
-        list: A list of dictionaries, each containing an 'entry' and the 'keyword' that triggered it.
+    Checks if a feed entry was published within the last 'hours'.
     """
+    entry_time = _extract_entry_time(entry)
+    if entry_time is None:
+        # If no date is found, we assume it's recent enough to be safe, 
+        # or you might prefer to skip undated entries.
+        return True
+    
+    time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours)
+    return entry_time > time_threshold
+
+
+def find_keyword_in_entry(entry: Dict[str, Any], keywords: List[str]) -> Optional[str]:
+    """
+    Checks if any keyword exists in the entry's title or summary.
+    Returns the first matching keyword, or None.
+    """
+    title = entry.get("title", "").lower()
+    summary = entry.get("summary", "").lower()
+    
+    for keyword in keywords:
+        kw_lower = keyword.lower()
+        if kw_lower in title or kw_lower in summary:
+            return keyword
+            
+    return None
+
+
+def process_feed(feed_name: str, feed_url: str, keywords: List[str], hours: int) -> List[Dict[str, Any]]:
+    """
+    Fetches and filters entries from a single RSS feed.
+    Returns a list of interesting entries with their metadata.
+    """
+    logging.info("Searching for news in %s...", feed_name)
+    try:
+        feed = feedparser.parse(feed_url)
+    except Exception as e:
+        logging.error("Failed to parse feed %s: %s", feed_name, e)
+        return []
+
     interesting_entries = []
-    now = datetime.now(timezone.utc)
-    time_threshold = now - timedelta(hours=hours)
-    feed = feedparser.parse(feed_url)
-
+    
     for entry in feed.entries:
-        entry_time = _extract_entry_time(entry)
-        is_recent = entry_time is None or entry_time > time_threshold
-        if is_recent:
-            title = entry.get("title", "")
-            summary = entry.get("summary", "")
-            for keyword in keywords:
-                if (keyword.lower() in title.lower() or
-                        keyword.lower() in summary.lower()):
-                    interesting_entries.append({"entry": entry, "keyword": keyword})
-                    break  # Move to the next entry once a keyword is found
+        if is_entry_recent(entry, hours):
+            keyword = find_keyword_in_entry(entry, keywords)
+            if keyword:
+                interesting_entries.append({
+                    "entry": entry,
+                    "keyword": keyword,
+                    "feed_name": feed_name
+                })
+                
+    if not interesting_entries:
+        logging.info("No interesting news found in %s.", feed_name)
+        
     return interesting_entries
 
 
-def format_email_body(entries):
+def format_entry_html(item: Dict[str, Any]) -> str:
     """
-    Formats a list of feed entries (with associated keywords) into an HTML email body.
-
-    Args:
-        entries (list): A list of dictionaries, each containing an "entry" and the "keyword".
-
-    Returns:
-        str: An HTML formatted string for the email body.
+    Formats a single news item as an HTML block for email.
     """
-    body_parts = []
-    for item in entries:
-        entry = item["entry"]
-        keyword = item["keyword"]
-        title = html.escape(entry.get("title", "N/A"))
-        author = html.escape(entry.get("author", "N/A"))
-        url = html.escape(entry.get("link", "#"))
-        # Sanitize summary - escape any HTML in the summary to ensure it's displayed as plain text
-        summary = html.escape(entry.get("summary", "No summary available."))
+    entry = item["entry"]
+    keyword = item["keyword"]
+    
+    title = html.escape(entry.get("title", "N/A"))
+    author = html.escape(entry.get("author", "N/A"))
+    url = html.escape(entry.get("link", "#"))
+    summary = html.escape(entry.get("summary", "No summary available."))
 
-        news_item_html = f"""
-        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px;">
-            <h3><b>Titulo :</b> <a href="{url}" style="text-decoration: none; color: #0056b3;">{title}</a></h3>
-            <p><b>Autor : </b> {author}</p>
-            <p><b>Palabra clave:</b> {html.escape(keyword)}</p>
-            <p><b>Resumen:</b><br>{summary}</p>
-           
-        </div>
-        """
-        body_parts.append(news_item_html)
-    return "".join(body_parts)
+    return f"""
+    <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px;">
+        <h3><b>Titulo :</b> <a href="{url}" style="text-decoration: none; color: #0056b3;">{title}</a></h3>
+        <p><b>Autor : </b> {author}</p>
+        <p><b>Palabra clave:</b> {html.escape(keyword)}</p>
+        <p><b>Resumen:</b><br>{summary}</p>
+    </div>
+    """
+
+
+def format_entry_text(item: Dict[str, Any]) -> str:
+    """
+    Formats a single news item as plain text for Telegram/Logs.
+    """
+    entry = item["entry"]
+    return f"Title: {entry.get('title', 'N/A')}\nKeyword: {item['keyword']}\nLink: {entry.get('link', '#')}"
+
+
+def send_notifications(news_items: List[Dict[str, Any]]) -> None:
+    """
+    Sends notifications for the collected news items based on configuration.
+    """
+    if not news_items:
+        return
+
+    # Email Notification
+    if config.NOTIFICATION_CHANNEL in ["email", "both"]:
+        email_body_parts = [format_entry_html(item) for item in news_items]
+        email_body = "".join(email_body_parts)
+        subject = "Resumen diario de noticias con sus palabras clave"
+        send_email(config.EMAIL_RECIPIENT, subject, email_body)
+
+    # Telegram Notification
+    if config.NOTIFICATION_CHANNEL in ["telegram", "both"]:
+        for item in news_items:
+            message = format_entry_text(item)
+            try:
+                send_message(message)
+                logging.info(f"Sent Telegram message: {message.splitlines()[0]}")
+            except Exception as e:
+                logging.error(f"Failed to send Telegram message: {e}")
+
+
+def collect_news() -> List[Dict[str, Any]]:
+    """
+    Iterates through all configured feeds and collects interesting news.
+    Handles deduplication based on title.
+    """
+    all_interesting_entries = []
+    seen_titles = set()
+
+    for feed_name, feed_url in config.FEEDS.items():
+        feed_entries = process_feed(feed_name, feed_url, config.KEYWORDS, config.HOURS_AGO)
+        
+        for item in feed_entries:
+            title = item["entry"].get("title", "N/A")
+            
+            if title not in seen_titles:
+                seen_titles.add(title)
+                all_interesting_entries.append(item)
+                logging.info(
+                    "Found interesting news in %s (keyword: %s): %s",
+                    feed_name, item["keyword"], title
+                )
+
+    return all_interesting_entries
 
 
 def main():
     """
-    Main function to run the news reader.
+    Main execution flow.
     """
-    all_interesting_entries = [] # New list to collect all entries
-    all_found_news_titles = [] # To log all found news without repetition
-
-    for feed_name, feed_url in config.FEEDS.items():
-        logging.info("Searching for news in %s...", feed_name)
-        interesting_entries_for_feed = search_news(feed_url, config.KEYWORDS, config.HOURS_AGO)
-
-        if interesting_entries_for_feed:
-            for item in interesting_entries_for_feed:
-                entry = item["entry"]
-                keyword = item["keyword"]
-                title = entry.get("title", "N/A")
-                if title not in all_found_news_titles: # Avoid duplicate logging/entries
-                    logging.info(
-                        "Found interesting news in %s (keyword: %s): %s",
-                        feed_name,
-                        keyword,
-                        title
-                    )
-                    all_interesting_entries.append(item)
-                    all_found_news_titles.append(title)
-        else:
-            logging.info("No interesting news found in %s.", feed_name)
-
-    if all_interesting_entries:
-        if config.NOTIFICATION_CHANNEL in ["email", "both"]:
-            email_body = format_email_body(all_interesting_entries)
-            subject = "Resumen diario de noticias con sus palabras clave" # Generic subject for all news
-            send_email(config.EMAIL_RECIPIENT, subject, email_body)
-
-        if config.NOTIFICATION_CHANNEL in ["telegram", "both"]:
-            for item in all_interesting_entries:
-                entry = item["entry"]
-                keyword = item["keyword"]
-                title = entry.get("title", "N/A")
-                url = entry.get("link", "#")
-                telegram_message = f"Title: {title}\nKeyword: {keyword}\nLink: {url}"
-                send_message(telegram_message)
-                logging.info(f"Sent Telegram message: {telegram_message}")
-
+    news_items = collect_news()
+    
+    if news_items:
+        send_notifications(news_items)
     else:
-        logging.info("No interesting news found across all feeds to send an email.")
+        logging.info("No interesting news found across all feeds.")
 
 
 if __name__ == "__main__":
