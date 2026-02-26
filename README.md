@@ -1,6 +1,6 @@
 # News Reader
 
-This script is a news reader that fetches articles from various RSS feeds and searches for specific keywords within their content. If a keyword is found, it sends a notification via email, utilizing a dedicated email sending module for modularity.
+This script is a news reader that fetches articles from various RSS feeds and searches for specific keywords within their content. If a keyword is found, it sends a notification via email, Telegram, or both, utilizing dedicated modules for modularity.
 
 ## Configuration
 
@@ -19,6 +19,38 @@ The `config.py` file contains the following configurable options:
 2.  Parses the content of each article.
 3.  Searches for any of the defined keywords within the article content.
 4.  If a keyword is found, a notification is sent using the configured channel (`email`, `telegram`, or `both`).
+
+## Run locally
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Set the required environment variables (or create a `.env` file):
+
+```bash
+export TELEGRAM_BOT_TOKEN="your_bot_token"
+export TELEGRAM_CHAT_ID="your_chat_id"
+export EMAIL_SENDER="your_email@example.com"
+export EMAIL_PASSWORD="your_email_password"
+```
+
+Run the script:
+
+```bash
+python news_reader_improved.py
+```
+
+## Tests
+
+Install pytest and run the test suite:
+
+```bash
+pip install pytest
+python -m pytest tests/ -v
+```
 
 ## Run with Docker
 
