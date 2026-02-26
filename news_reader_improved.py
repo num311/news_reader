@@ -130,12 +130,18 @@ def format_entry_html(item: Dict[str, Any]) -> str:
     """
 
 
+TELEGRAM_MAX_CHARS = 4096
+
 def format_entry_text(item: Dict[str, Any]) -> str:
     """
     Formats a single news item as plain text for Telegram/Logs.
+    Truncates to Telegram's 4096 character limit.
     """
     entry = item["entry"]
-    return f"Title: {entry.get('title', 'N/A')}\nKeyword: {item['keyword']}\nLink: {entry.get('link', '#')}"
+    message = f"Title: {entry.get('title', 'N/A')}\nKeyword: {item['keyword']}\nLink: {entry.get('link', '#')}"
+    if len(message) > TELEGRAM_MAX_CHARS:
+        message = message[:TELEGRAM_MAX_CHARS - 3] + "..."
+    return message
 
 
 def send_notifications(news_items: List[Dict[str, Any]]) -> None:
@@ -166,10 +172,10 @@ def send_notifications(news_items: List[Dict[str, Any]]) -> None:
 def collect_news() -> List[Dict[str, Any]]:
     """
     Fetches all configured feeds in parallel and collects interesting news.
-    Handles deduplication based on title.
+    Handles deduplication based on URL.
     """
     all_interesting_entries = []
-    seen_titles = set()
+    seen_urls = set()
 
     with ThreadPoolExecutor(max_workers=len(config.FEEDS)) as executor:
         futures = {
@@ -186,14 +192,14 @@ def collect_news() -> List[Dict[str, Any]]:
                 continue
 
             for item in feed_entries:
-                title = item["entry"].get("title", "N/A")
+                url = item["entry"].get("link", "")
 
-                if title not in seen_titles:
-                    seen_titles.add(title)
+                if url not in seen_urls:
+                    seen_urls.add(url)
                     all_interesting_entries.append(item)
                     logging.info(
                         "Found interesting news in %s (keyword: %s): %s",
-                        feed_name, item["keyword"], title
+                        feed_name, item["keyword"], item["entry"].get("title", "N/A")
                     )
 
     return all_interesting_entries
