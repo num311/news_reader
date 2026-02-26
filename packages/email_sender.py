@@ -1,5 +1,9 @@
 import os
+import logging
 import yagmail
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def send_email(receiver_email, subject, contents, attachments=None):
     """
@@ -15,7 +19,7 @@ def send_email(receiver_email, subject, contents, attachments=None):
     sender_password = os.getenv("EMAIL_PASSWORD")
 
     if not sender_email or not sender_password:
-        print("Error: EMAIL_SENDER and/or EMAIL_PASSWORD environment variables are not set.")
+        logging.error("EMAIL_SENDER and/or EMAIL_PASSWORD environment variables are not set.")
         return
 
     try:
@@ -26,9 +30,9 @@ def send_email(receiver_email, subject, contents, attachments=None):
             contents=contents,
             attachments=attachments
         )
-        print(f"Email sent successfully to {receiver_email}!")
+        logging.info("Email sent successfully to %s.", receiver_email)
     except Exception as e:
-        print(f"Error sending email: {e}")
+        logging.error("Error sending email: %s", e)
 
 if __name__ == "__main__":
     # Example usage (requires EMAIL_SENDER and EMAIL_PASSWORD environment variables to be set):

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from calendar import timegm
 from email.utils import parsedate_to_datetime
 from typing import List, Dict, Optional, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import feedparser
 import config
@@ -164,25 +165,36 @@ def send_notifications(news_items: List[Dict[str, Any]]) -> None:
 
 def collect_news() -> List[Dict[str, Any]]:
     """
-    Iterates through all configured feeds and collects interesting news.
+    Fetches all configured feeds in parallel and collects interesting news.
     Handles deduplication based on title.
     """
     all_interesting_entries = []
     seen_titles = set()
 
-    for feed_name, feed_url in config.FEEDS.items():
-        feed_entries = process_feed(feed_name, feed_url, config.KEYWORDS, config.HOURS_AGO)
-        
-        for item in feed_entries:
-            title = item["entry"].get("title", "N/A")
-            
-            if title not in seen_titles:
-                seen_titles.add(title)
-                all_interesting_entries.append(item)
-                logging.info(
-                    "Found interesting news in %s (keyword: %s): %s",
-                    feed_name, item["keyword"], title
-                )
+    with ThreadPoolExecutor(max_workers=len(config.FEEDS)) as executor:
+        futures = {
+            executor.submit(process_feed, feed_name, feed_url, config.KEYWORDS, config.HOURS_AGO): feed_name
+            for feed_name, feed_url in config.FEEDS.items()
+        }
+
+        for future in as_completed(futures):
+            feed_name = futures[future]
+            try:
+                feed_entries = future.result()
+            except Exception as e:
+                logging.error("Unexpected error processing feed %s: %s", feed_name, e)
+                continue
+
+            for item in feed_entries:
+                title = item["entry"].get("title", "N/A")
+
+                if title not in seen_titles:
+                    seen_titles.add(title)
+                    all_interesting_entries.append(item)
+                    logging.info(
+                        "Found interesting news in %s (keyword: %s): %s",
+                        feed_name, item["keyword"], title
+                    )
 
     return all_interesting_entries
 
