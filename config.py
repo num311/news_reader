@@ -19,6 +19,8 @@ FEEDS = {
     "bleepingcomputer": "https://www.bleepingcomputer.com/feed/",
     "krebsonsecurity": "https://krebsonsecurity.com/feed/",
     "thehackernews": "https://feeds.feedburner.com/TheHackernews",
+    "talos": "https://blog.talosintelligence.com/rss/",
+    "netsec": "https://www.reddit.com/r/netsec/.rss",
 }
 
 KEYWORDS = [
