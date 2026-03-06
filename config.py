@@ -21,6 +21,7 @@ FEEDS = {
     "thehackernews": "https://feeds.feedburner.com/TheHackernews",
     "talos": "https://blog.talosintelligence.com/rss/",
     "netsec": "https://www.reddit.com/r/netsec/.rss",
+    "google_feed" : "https://www.google.com/alerts/feeds/14277370585942106276/8121144935472729287"
 }
 
 KEYWORDS = [
