@@ -49,13 +49,15 @@ def is_entry_recent(entry: Dict[str, Any], hours: int) -> bool:
     return entry_time > datetime.now(timezone.utc) - timedelta(hours=hours)
 
 
-def find_keyword_in_entry(entry: Dict[str, Any]) -> Optional[str]:
+def find_keywords_in_entry(entry: Dict[str, Any]) -> List[str]:
+    """Return all keywords that match the entry's title or summary."""
     title = entry.get("title", "").lower()
     summary = entry.get("summary", "").lower()
+    matched = []
     for kw_lower, kw_original in zip(_KEYWORDS_LOWER, config.KEYWORDS):
         if kw_lower in title or kw_lower in summary:
-            return kw_original
-    return None
+            matched.append(kw_original)
+    return matched
 
 
 def process_feed(feed_name: str, feed_url: str, hours: int) -> List[Dict[str, Any]]:
@@ -65,13 +67,13 @@ def process_feed(feed_name: str, feed_url: str, hours: int) -> List[Dict[str, An
         logging.error("Failed to parse feed %s: %s", feed_name, e)
         return []
 
-    results = [
-        {"entry": entry, "keyword": kw, "feed_name": feed_name}
-        for entry in feed.entries
-        if is_entry_recent(entry, hours)
-        for kw in (find_keyword_in_entry(entry),)
-        if kw
-    ]
+    results = []
+    for entry in feed.entries:
+        if not is_entry_recent(entry, hours):
+            continue
+        matched_keywords = find_keywords_in_entry(entry)
+        for kw in matched_keywords:
+            results.append({"entry": entry, "keyword": kw, "feed_name": feed_name})
 
     logging.info("%s: %d match(es) found.", feed_name, len(results))
     return results
